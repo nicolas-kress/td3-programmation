@@ -7,10 +7,8 @@
 // - Magenta: Moving
 
 // Color code: People 
-// - Yellow: Going somewhere
-// - White: Idle
-// - Red (Residents only): Doing errand
-// - Cyan (Visitors only): Visitor
+// - White: healthy.
+// - Red: infected.
 
 /////////////////////////////////////////////////////////////////////////////
 /// SIMULATION PARAMETERS ///////////////////////////////////////////////////
