@@ -1,25 +1,23 @@
 #include "screen.cpp"
 
-#define LEFTOFFSET 10
+/* Graphics */
+#define LEFTOFFSET 5
 #define BOTTOMOFFSET 2
-#define BUILDING_GAP_SPACE 10
+#define BUILDING_GAP_SPACE 6
 
 #define MAX_ELEVATOR_NUM 5
-#define MAX_FLOORS 20
-#define MAX_NAME_LENGTH 4
-
-#define FRAMERATE 100
-#define MAX_ITERATIONS 1000
+#define MAX_FLOORS 50
 
 #define RESIDENT_ERRAND_TIME 5
 #define VISITOR_VISIT_TIME 10
 
+/* Probabilities */
+#define RESIDENT_CHANCE_OF_ERRAND 50
+#define VISITOR_CHANCE_OF_VISIT 100
 
-/* For COVID-19 mode: multiply values by 10 or 100 to limit movement */
-#define RESIDENT_CHANCE_OF_ERRAND 500
-#define VISITOR_CHANCE_OF_VISIT 1000
+#define NAME_POOL_SIZE 20
 
-string name_list[20] = {"John","Mark","Paul","Lisa",
+string name_list[NAME_POOL_SIZE] = {"John","Mark","Paul","Lisa",
 "Anne","Tony","Mike","Ryan","Noah","Ella","Leah","Zane",
 "Jake","Emma","Mary","Jack","Alex","Luke","Rose","Sean"};
 

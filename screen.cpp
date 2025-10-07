@@ -41,14 +41,12 @@ class Screen
 	{
 		for (int i = 0; i < n; i++)
 			cout << c << "\e[A\e[D";
-		cout.flush();
 	}
 
 	void row (const char *c, int n)
 	{
 		for (int i = 0; i < n; i++)
 			cout << c;
-		cout.flush();
 	}
 
 	void fg (color c) { cout << "\e[" << 30+c << "m"; }
@@ -57,21 +55,3 @@ class Screen
 
 	Screen (int r) { rows = r; }
 };
-/*
-int main ()
-{
-	Screen *s = new Screen(30);
-	srand48(time(NULL));
-
-	s->clear();
-	s->move(20,10);
-	s->bg(blue);
-	s->fg(white);
-	s->column(uparrow,10);
-	s->row(downarrow,12);
-	s->move(31,10);
-	s->column(uparrow,10);
-	s->reset();
-	s->move(0,0);
-}
-*/

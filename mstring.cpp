@@ -18,19 +18,25 @@
 
 #define RANDOM_RESIDENTS 1
 #define RANDOM_VISITORS 1
-
 #define RANDOM_PARAMETERS 1
 
-#define NUM_BUILDINGS 8
-#define NUM_VISITORS 5
-#define NUM_RESIDENTS 20
+// Set to 1 for number of elevators proportionnal to height
+#define PROPORTIONNAL_ELEVATORS 1
+
+#define FRAMERATE 50
+#define MAX_ITERATIONS 2000
+
+#define NUM_BUILDINGS 10
+#define NUM_VISITORS 50
+#define NUM_RESIDENTS 100
 
 #define DUMP 0
+#define MINI_DUMP 1
 
-//For present simulations, set following values and set RANDOM_PARAMETERS to 0:
+//For present simulations, set the following values and set RANDOM_PARAMETERS to 0:
 
-int building_heights[NUM_BUILDINGS] = {5,18,12,19,8,8,5,10};
-int building_num_elevators[NUM_BUILDINGS] = {1,4,2,3,2,2,1,3};
+int building_heights[NUM_BUILDINGS];
+int building_num_elevators[NUM_BUILDINGS];
 
 int resident_addresses[NUM_RESIDENTS];
 int resident_floors[NUM_RESIDENTS];
@@ -48,6 +54,19 @@ int random_building();
 int random_floor(int address);
 
 /////////////////////////////////////////////////////////////////////////////
+
+int pseudo_log10(int n) {
+    int k = 0;
+    int pow = 1;
+    while (pow <= n) {
+        if (10*pow > n) {
+            return k;
+        }
+        k++;
+        pow = 10*pow;
+    }
+    return (k-1);
+}
 
 //////////////////////////////
 // Elevator 
@@ -135,7 +154,7 @@ Floor::Floor (int num_floor, Building *building_ref) {
 /////////////////////////////
 
 void Building::show_building() {
-    s->move(extraLeftOffset+LEFTOFFSET-1,BOTTOMOFFSET);
+    s->move(extraLeftOffset+LEFTOFFSET-1-pseudo_log10(address),BOTTOMOFFSET);
     s->bg(cyan);
     s->fg(white);
     cout << to_string(address);
@@ -144,10 +163,9 @@ void Building::show_building() {
     s->row(".", nColumns+1);
     s->move(extraLeftOffset+LEFTOFFSET+nColumns,BOTTOMOFFSET);
     s->column(".",nFloors+2);
-    
-    s->reset();
-    s->move(0,0);
     s->bg(black);
+    
+    s->move(0,0);
 }
 
 void Building::show_elevators() {
@@ -170,7 +188,6 @@ void Building::show_elevators() {
             char *direction = elevator->get_direction();
             s->row(direction, 1);
         }
-        s->reset();
         s->move(0,0);
     }
 
@@ -257,7 +274,10 @@ void Building::elevators_dump() {
 void Building::set_next_building(Building *building) {nextBuilding = building;}
 void Building::set_previous_building(Building *building) {
     previousBuilding = building;
-    extraLeftOffset = previousBuilding->extraLeftOffset + previousBuilding->nColumns + BUILDING_GAP_SPACE;
+    extraLeftOffset = previousBuilding->extraLeftOffset 
+        + previousBuilding->nColumns 
+        + BUILDING_GAP_SPACE
+        + pseudo_log10(address);
 
     for (int i=0; i<nElevators ; i++) {
         elevators[i]->x = extraLeftOffset + 2*i + 2;
@@ -276,7 +296,7 @@ Building::Building (int num_floors, int num_elevators,
     nColumns = 2*num_elevators + 2;
     nElevators = num_elevators;
 
-    extraLeftOffset = 0;
+    extraLeftOffset = pseudo_log10(address);
     address = building_address;
 
     /* Init elevators */
@@ -349,23 +369,22 @@ Building *Person::get_building() {return building;}
 //     return;
 // }
 
-void Person::show() {
-    if (inElevator) {
-        return;
-    }
-    if (idle) {
-        s->fg(white);
-    } else {
-        s->fg(yellow);
-    }
-    s->bg(black);
+// void Person::show() {
+//     if (inElevator) {
+//         return;
+//     }
+//     if (idle) {
+//         s->fg(white);
+//     } else {
+//         s->fg(yellow);
+//     }
+//     s->bg(black);
 
-    s->move(LEFTOFFSET+x+1, BOTTOMOFFSET+floor->get_floor());
-    s->row(person_marker, 1);
+//     s->move(LEFTOFFSET+x+1, BOTTOMOFFSET+floor->get_floor());
+//     s->row(person_marker, 1);
 
-    s->reset();
-    s->move(0,0);
-}
+//     s->move(0,0);
+// }
 
 void Person::set_elevator(Elevator *allocated_elevator) {elevator = allocated_elevator;}
 
@@ -560,7 +579,6 @@ void Resident::show() {
     s->bg(black);
     s->move(1+LEFTOFFSET+x,BOTTOMOFFSET+floor->get_floor());
     s->row(person_marker, 1);
-    s->reset();
     s->move(0,0);
 }
 
@@ -746,7 +764,6 @@ void Visitor::show() {
     s->bg(black);
     s->move(1+LEFTOFFSET+x,BOTTOMOFFSET+floor->get_floor());
     s->row(person_marker, 1);
-    s->reset();
     s->move(0,0);
 }
 
@@ -781,7 +798,11 @@ void init() {
     if (RANDOM_PARAMETERS) {
         for (int i=0; i<NUM_BUILDINGS; i++) {
             building_heights[i] = 5+myrand(MAX_FLOORS-5);
-            building_num_elevators[i] = 1+myrand(MAX_ELEVATOR_NUM-1);
+            if (PROPORTIONNAL_ELEVATORS) {
+                building_num_elevators[i] = min(1+((int)building_heights[i]/5),MAX_ELEVATOR_NUM);
+            } else {
+                building_num_elevators[i] = min(1+myrand(MAX_ELEVATOR_NUM-1), MAX_ELEVATOR_NUM);
+            }   
         }
         for (int i=0; i<NUM_RESIDENTS; i++) {
             resident_addresses[i] = 1+myrand(NUM_BUILDINGS);
@@ -812,7 +833,8 @@ void init() {
 
     /* Initialise Residents */
     for (int r=0; r<NUM_RESIDENTS; r++) {
-        residents[r] = new Resident(buildings[resident_addresses[r]-1],resident_floors[r],name_list[r]);
+        residents[r] = new Resident(buildings[resident_addresses[r]-1],
+            resident_floors[r],name_list[myrand(NAME_POOL_SIZE)]);
     }
     if (DUMP) {
         printf("Initialised residents.\n");
@@ -838,16 +860,25 @@ void update() {
         buildings[b]->update();
     }
     
+    int active_residents = 0;
     /* Update Residents */
     for (int r=0; r<NUM_RESIDENTS; r++) {
         residents[r]->update();
         residents[r]->show();
+        if (residents[r]->is_idle() == 0) {
+            active_residents++;
+        }
     }
 
+    int active_visitors = 0;
     /* Update Visitors */
     for (int v=0; v<NUM_VISITORS; v++) {
         visitors[v]->update();
         visitors[v]->show();
+        s->fg(white);
+        if (visitors[v]->is_idle() == 0) {
+            active_visitors++;
+        }
     }
 
     /* (Optional) Dump */
@@ -859,13 +890,21 @@ void update() {
             visitors[v]->dump();
         }
     }
+
+    cout.flush();
+    if (MINI_DUMP) {
+        printf("Active residents: %d/%d\n", active_residents, NUM_RESIDENTS);
+    }
+    if (MINI_DUMP) {
+        printf("Active visitors: %d/%d\n", active_visitors, NUM_VISITORS);
+    }
 }
 
 void loop() {
     for (int it=0;it<MAX_ITERATIONS;it++) {
-        mysleep(FRAMERATE);
         update();
         printf("Iteration %d complete.\n",it);
+        mysleep(FRAMERATE);
     }
 }
 
